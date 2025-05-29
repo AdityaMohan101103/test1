@@ -3,9 +3,18 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from html import unescape
+import time
 
+# More realistic headers to mimic a real browser
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/114.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Referer": "https://www.zomato.com/",
+    "Connection": "keep-alive",
+    "DNT": "1"
 }
 
 def extract_needed_data(json_data):
@@ -35,24 +44,42 @@ def extract_needed_data(json_data):
 
     return filtered_data
 
-def get_menu(url):
+def get_menu(url, max_retries=5):
     if not url.endswith('/order'):
         url += '/order'
 
-    print(f"Scraping URL: {url}")  # Debug log
+    attempt = 0
+    backoff = 1  # seconds
 
-    response = requests.get(url, headers=headers, timeout=15)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'html.parser')
-    scripts = soup.find_all('script')
+    while attempt < max_retries:
+        try:
+            response = requests.get(url, headers=headers, timeout=15)
+            if response.status_code == 403:
+                print(f"Received 403 Forbidden on attempt {attempt + 1}. Retrying after {backoff}s...")
+                time.sleep(backoff)
+                backoff *= 2  # exponential backoff
+                attempt += 1
+                continue
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+            scripts = soup.find_all('script')
 
-    for script in scripts:
-        if 'window.__PRELOADED_STATE__' in script.text:
-            match = re.search(r'window\.__PRELOADED_STATE__ = JSON\.parse\((.+?)\);', script.text)
-            if match:
-                escaped_json = match.group(1)
-                decoded_json_str = unescape(escaped_json)
-                parsed_json = json.loads(decoded_json_str)
-                preloaded_state = json.loads(parsed_json)
-                return extract_needed_data(preloaded_state)
+            for script in scripts:
+                if 'window.__PRELOADED_STATE__' in script.text:
+                    match = re.search(r'window\.__PRELOADED_STATE__ = JSON\.parse\((.+?)\);', script.text)
+                    if match:
+                        escaped_json = match.group(1)
+                        decoded_json_str = unescape(escaped_json)
+                        parsed_json = json.loads(decoded_json_str)
+                        preloaded_state = json.loads(parsed_json)
+                        return extract_needed_data(preloaded_state)
+            print("No embedded menu data found on this page.")
+            return []
+        except requests.RequestException as e:
+            print(f"Request error on attempt {attempt + 1}: {e}")
+            time.sleep(backoff)
+            backoff *= 2
+            attempt += 1
+
+    print("Max retries reached. Failed to fetch menu.")
     return []
