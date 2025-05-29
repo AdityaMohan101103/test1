@@ -10,7 +10,9 @@ function App() {
     setLoading(true);
     setData([]);
     try {
-      const response = await fetch(`https://your-backend-url.onrender.com/scrape?url=${encodeURIComponent(url)}`);
+      const response = await fetch(
+        `https://test1-pyai.onrender.com/scrape?url=${encodeURIComponent(url)}`
+      );
       const result = await response.json();
       setData(result.items || []);
     } catch (error) {
