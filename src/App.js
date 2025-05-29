@@ -1,65 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 function App() {
-  const [url, setUrl] = useState('');
-  const [menuItems, setMenuItems] = useState([]);
+  const [url, setUrl] = useState("");
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleScrape = async () => {
     setLoading(true);
-    setError('');
+    setError("");
+    setData([]);
     try {
-      const res = await fetch(`https://test1-pyai.onrender.com/scrape?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      if (data.status === 'success') {
-        setMenuItems(data.items);
+      const response = await fetch(
+        `https://test1-pyai.onrender.com/scrape?url=${encodeURIComponent(url)}`
+      );
+      const result = await response.json();
+      if (result.status === "success") {
+        setData(result.items);
       } else {
-        setError(data.message || 'Failed to scrape.');
+        setError(result.message || "Scraping failed");
       }
     } catch (err) {
-      setError('Something went wrong while fetching.');
-    } finally {
-      setLoading(false);
+      setError("Failed to connect to the server.");
     }
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: "2rem", fontFamily: "Arial" }}>
       <h1>Zomato Menu Scraper</h1>
       <input
         type="text"
         value={url}
-        onChange={(e) => setUrl(e.target.value)}
         placeholder="Enter Zomato restaurant URL"
-        style={{ width: '60%', padding: 10 }}
+        onChange={(e) => setUrl(e.target.value)}
+        style={{ width: "60%", padding: "0.5rem" }}
       />
-      <button onClick={handleScrape} style={{ padding: 10, marginLeft: 10 }}>
+      <button onClick={handleScrape} style={{ padding: "0.5rem", marginLeft: "1rem" }}>
         Scrape Menu
       </button>
 
       {loading && <p>Loading...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {menuItems.length > 0 && (
-        <table border="1" cellPadding="8" style={{ marginTop: 20, width: '100%' }}>
+      {data.length > 0 && (
+        <table border="1" cellPadding="10" style={{ marginTop: "2rem", width: "100%" }}>
           <thead>
             <tr>
-              <th>Item Name</th>
-              <th>Price</th>
+              <th>Item</th>
               <th>Category</th>
-              <th>Sub-category</th>
-              <th>Veg/NonVeg</th>
+              <th>Subcategory</th>
+              <th>Price</th>
+              <th>Veg/Non-Veg</th>
               <th>Description</th>
             </tr>
           </thead>
           <tbody>
-            {menuItems.map((item, idx) => (
+            {data.map((item, idx) => (
               <tr key={idx}>
                 <td>{item.item_name}</td>
-                <td>{item.price}</td>
                 <td>{item.category}</td>
                 <td>{item.sub_category}</td>
+                <td>{item.price}</td>
                 <td>{item.dietary_slugs}</td>
                 <td>{item.desc}</td>
               </tr>
