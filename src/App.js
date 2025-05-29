@@ -1,78 +1,70 @@
-import React, { useState } from "react";
+// App.js
+import React, { useState } from 'react';
 
 function App() {
-  const [url, setUrl] = useState("");
-  const [data, setData] = useState([]);
+  const [url, setUrl] = useState('');
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const fetchData = async () => {
+    setError('');
+    setItems([]);
     setLoading(true);
-    setError("");
-    setData([]);
 
     try {
-      const response = await fetch(`https://test1-pyai.onrender.com/scrape?url=${encodeURIComponent(url)}`);
-      const result = await response.json();
+      let fetchUrl = url.trim();
+      if (!fetchUrl.endsWith('/order')) {
+        fetchUrl += '/order';
+      }
 
-      if (result.status === "success") {
-        setData(result.items);
+      // Your Render backend URL here:
+      const backendAPI = 'https://test1-pyai.onrender.com/scrape?url=' + encodeURIComponent(fetchUrl);
+
+      const response = await fetch(backendAPI);
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setItems(data.items);
       } else {
-        setError(result.message || "Scraping failed.");
+        setError(data.message || 'Error fetching data');
       }
     } catch (err) {
-      setError("Something went wrong.");
-    } finally {
-      setLoading(false);
+      setError('Fetch error: ' + err.message);
     }
+
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Zomato Menu Scraper</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter Zomato restaurant URL"
-          style={{ width: "400px", padding: "10px" }}
-        />
-        <button type="submit" style={{ padding: "10px", marginLeft: "10px" }}>
-          Scrape
-        </button>
-      </form>
+    <div style={{ maxWidth: 800, margin: '20px auto', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Zomato Menu Scraper</h1>
+      <input
+        type="text"
+        placeholder="Enter Zomato restaurant URL"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        style={{ width: '100%', padding: '8px', fontSize: '16px' }}
+      />
+      <button onClick={fetchData} style={{ marginTop: 10, padding: '10px 20px', fontSize: '16px' }}>
+        Scrape Menu
+      </button>
 
       {loading && <p>Loading...</p>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {data.length > 0 && (
-        <table border="1" cellPadding="5" style={{ marginTop: "20px", width: "100%" }}>
-          <thead>
-            <tr>
-              <th>Item Name</th>
-              <th>Price</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Sub-category</th>
-              <th>Dietary</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item, index) => (
-              <tr key={index}>
-                <td>{item.item_name}</td>
-                <td>{item.price}</td>
-                <td>{item.desc}</td>
-                <td>{item.category}</td>
-                <td>{item.sub_category}</td>
-                <td>{item.dietary_slugs}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
+        {items.map((item, idx) => (
+          <li key={idx} style={{ borderBottom: '1px solid #ccc', padding: '10px 0' }}>
+            <b>{item.item_name}</b> - {item.price} <br />
+            <small>
+              Category: {item.category} / Sub-category: {item.sub_category}
+            </small>
+            <p>{item.desc}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
