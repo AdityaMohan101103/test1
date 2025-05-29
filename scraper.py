@@ -39,7 +39,10 @@ def get_menu(url):
     if not url.endswith('/order'):
         url += '/order'
 
+    print(f"Scraping URL: {url}")  # Debug log
+
     response = requests.get(url, headers=headers, timeout=15)
+    response.raise_for_status()
     soup = BeautifulSoup(response.text, 'html.parser')
     scripts = soup.find_all('script')
 
