@@ -4,20 +4,18 @@ from scraper import get_menu
 
 app = FastAPI()
 
-# CORS for frontend to access backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET"],
-    allow_headers=["*"]
+    allow_origins=["*"],  # Allow all origins or specify your frontend URL here
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# ✅ Root URL for health check
 @app.get("/")
 def root():
     return {"message": "Backend is running"}
 
-# ✅ Scrape endpoint
 @app.get("/scrape")
 def scrape(url: str = Query(...)):
     try:
