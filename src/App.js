@@ -1,76 +1,52 @@
 import React, { useState } from "react";
 
-export default function App() {
+const BACKEND_URL = "https://test1-pyai.onrender.com";
+
+function App() {
   const [url, setUrl] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleScrape = async () => {
+    setLoading(true);
     setError(null);
     setItems([]);
-    if (!url.trim()) {
-      setError("Please enter a valid URL");
-      return;
-    }
-
-    let fetchUrl = url.trim();
-    if (!fetchUrl.endsWith("/order")) {
-      fetchUrl += "/order";
-    }
-
-    setLoading(true);
     try {
-      const res = await fetch(
-        `https://test1-pyai.onrender.com/scrape?url=${encodeURIComponent(fetchUrl)}`
-      );
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
-      }
+      const res = await fetch(`${BACKEND_URL}/scrape?url=${encodeURIComponent(url)}`);
       const data = await res.json();
       if (data.status === "success") {
-        if (data.items.length === 0) {
-          setError("No items found for this URL.");
-        }
         setItems(data.items);
       } else {
-        setError(data.message || "Error scraping data.");
+        setError(data.message || "Error fetching data");
       }
     } catch (err) {
-      setError(err.message || "Failed to fetch data.");
+      setError("Failed to connect to backend");
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ maxWidth: 700, margin: "auto", padding: 20 }}>
-      <h1>Zomato Menu Scraper</h1>
+    <div style={{ padding: "20px" }}>
+      <h2>Zomato Menu Scraper</h2>
       <input
         type="text"
         placeholder="Enter Zomato restaurant URL"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        style={{ width: "100%", padding: 10, fontSize: 16 }}
+        style={{ width: "80%", padding: "8px" }}
       />
-      <button onClick={handleScrape} style={{ marginTop: 10, padding: "10px 20px" }}>
-        Scrape Menu
+      <button onClick={handleScrape} disabled={loading} style={{ padding: "8px 12px", marginLeft: "8px" }}>
+        {loading ? "Loading..." : "Scrape"}
       </button>
-
-      {loading && <p>Loading...</p>}
-
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {items.length > 0 && (
-        <table
-          style={{ marginTop: 20, width: "100%", borderCollapse: "collapse" }}
-          border="1"
-        >
+        <table border="1" cellPadding="5" style={{ marginTop: "20px", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th>Restaurant</th>
               <th>Category</th>
               <th>Sub-category</th>
-              <th>Veg/NonVeg</th>
               <th>Item Name</th>
               <th>Price</th>
               <th>Description</th>
@@ -79,10 +55,8 @@ export default function App() {
           <tbody>
             {items.map((item, idx) => (
               <tr key={idx}>
-                <td>{item.restaurant}</td>
                 <td>{item.category}</td>
                 <td>{item.sub_category}</td>
-                <td>{item.dietary_slugs}</td>
                 <td>{item.item_name}</td>
                 <td>{item.price}</td>
                 <td>{item.desc}</td>
@@ -94,3 +68,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
