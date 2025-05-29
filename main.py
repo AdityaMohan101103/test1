@@ -11,6 +11,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+@app.get("/")
+def root():
+    return {"message": "Zomato Scraper API is running."}
+
 @app.get("/scrape")
 def scrape(url: str = Query(...)):
     try:
